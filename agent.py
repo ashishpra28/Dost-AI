@@ -1,6 +1,6 @@
 # import libraries 
 from langchain_groq import ChatGroq 
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage
 from langchain_core.tools import tool 
 
 from langgraph.graph import StateGraph, START, END, MessagesState 
@@ -14,13 +14,9 @@ from pathlib import Path
 from dotenv import load_dotenv 
 load_dotenv() 
 
-# Use Certifi's trusted CA certificates for secure HTTPS connections
+# use Certifi's trusted CA certificates for secure HTTPS connections
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
-
-# define state 
-class ChatState(MessagesState): 
-    messages : Annotated[list[BaseMessage],add_messages]
 
 Path("data").mkdir(exist_ok=True)
 
@@ -74,7 +70,7 @@ def check_model_name(model_name: str | None) -> str:
     return model_name 
 
 # build agent workflow 
-def build_agent(model_name: str); 
+def build_agent(model_name: str):
     """Build a LangGraph agent for a selected Groq model"""
 
     selected_model = check_model_name(model_name=model_name)
@@ -87,4 +83,33 @@ def build_agent(model_name: str);
 
     # define chat node 
     def chat_node(state:MessagesState): 
-        messages : Annotated[list[BaseMessage],add_messages]
+        messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+        response = llm_with_tool(messages)
+        return {"messages":[response]}
+
+    # define tool node
+    tool_node = ToolNode(tools)
+
+    # define graph 
+    graph = StateGraph(MessagesState)
+
+    # add nodes
+    graph.add_node("chat_node",chat_node)
+    graph.add_node("tools",tool_node)
+
+    # add edges 
+    graph.add_edge(START, "chat_node")
+    graph.add_conditional_edges("chat_node",tools_condition)
+    graph.add_conditional_edges("tools","chat_node")
+
+    # define sqlite3 connection 
+    conn = sqlite3.connect("data/chatbot_checkpoints.sqlite",check_same_thread=False)
+
+    # define checkpoint 
+    checkpoint = SqliteSaver(conn)
+
+    # compile graph 
+    workflow = graph.compile(checkpointer=checkpoint) 
+
+    # return workflow 
+    return workflow
