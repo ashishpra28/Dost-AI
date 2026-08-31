@@ -26,3 +26,5 @@ sqlalchemy==2.0.50
 
 sentence-transformers==6.0.0
 langchain-huggingface==1.2.2
+
+youtube-transcript-api==1.2.4

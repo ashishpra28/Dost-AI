@@ -1,11 +1,12 @@
-# import libraries 
+# Import libraries 
 from langchain_groq import ChatGroq 
 from langchain_core.messages import SystemMessage
-from langchain_core.tools import tool 
 
 from langgraph.graph import StateGraph, START, END, MessagesState 
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.sqlite import SqliteSaver
+
+from tools import all_tools
 
 import os 
 import sqlite3
@@ -14,23 +15,21 @@ from pathlib import Path
 from dotenv import load_dotenv 
 load_dotenv() 
 
-# use Certifi's trusted CA certificates for secure HTTPS connections
+# Use Certifi's trusted CA certificates for secure HTTPS connections
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
 Path("data").mkdir(exist_ok=True)
 
-# define models 
+# Define models 
 DEFAULT_MODEL = os.getenv("GROQ_MODEL","openai/gpt-oss-120b")
 
 ALLOWED_MODEL = {
-    "llama-3.1-8b-instant",
-    "llama-3.3-70b-versatile",
     "openai/gpt-oss-20b",
     "qwen/qwen3.6-27b"
 }
 
-# system prompt
+# System prompt
 SYSTEM_PROMPT = """
 You are a helpful Agentic AI assistant named Dost AI similar to ChatGPT, Claude, Gemini, etc....
 
@@ -54,7 +53,7 @@ Rules:
 - Be clear, helpful, and concise.
 """
 
-# check if user provides model is matching or not 
+# Check if user provides model is matching or not 
 def check_model_name(model_name: str | None) -> str: 
     """ It checks selected model name from frontend.
     If model name is missing or not provided, use DEFAULT_MODEL"""
@@ -69,26 +68,26 @@ def check_model_name(model_name: str | None) -> str:
 
     return model_name 
 
-# build agent workflow 
+# Build agent workflow 
 def build_agent(model_name: str):
     """Build a LangGraph agent for a selected Groq model"""
 
     selected_model = check_model_name(model_name=model_name)
 
     # define model 
-    llm = ChatGroq(model=model_name, temperature=0.3, streaming=True)
+    llm = ChatGroq(model=selected_model, temperature=0.3, streaming=True)
 
     # define llm tool 
-    llm_with_tool = llm.bind_tools(tools) 
+    llm_with_tool = llm.bind_tools(all_tools) 
 
     # define chat node 
     def chat_node(state:MessagesState): 
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
-        response = llm_with_tool(messages)
+        response = llm_with_tool.invoke(messages)
         return {"messages":[response]}
 
     # define tool node
-    tool_node = ToolNode(tools)
+    tool_node = ToolNode(all_tools)
 
     # define graph 
     graph = StateGraph(MessagesState)
@@ -100,7 +99,7 @@ def build_agent(model_name: str):
     # add edges 
     graph.add_edge(START, "chat_node")
     graph.add_conditional_edges("chat_node",tools_condition)
-    graph.add_conditional_edges("tools","chat_node")
+    graph.add_edge("tools","chat_node")
 
     # define sqlite3 connection 
     conn = sqlite3.connect("data/chatbot_checkpoints.sqlite",check_same_thread=False)
@@ -113,3 +112,20 @@ def build_agent(model_name: str):
 
     # return workflow 
     return workflow
+
+
+# Create agent cache to reuse agent 
+_AGENT_CACHE = {}
+
+def get_agent(model_name:str | None = None): 
+    """
+    Return cached LangGraph agent for selected model.
+    If not created yet, create it once and reuse it.
+    """
+
+    selected_model = check_model_name(model_name=model_name)
+
+    if selected_model not in _AGENT_CACHE: 
+        _AGENT_CACHE[selected_model] = build_agent(selected_model)
+
+    return _AGENT_CACHE[selected_model]
