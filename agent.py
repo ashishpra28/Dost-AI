@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph, START, END, MessagesState 
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.sqlite import SqliteSaver
-
+from langchain_core.messages import trim_messages
 from tools import all_tools
 
 import os 
@@ -22,35 +22,88 @@ os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 Path("data").mkdir(exist_ok=True)
 
 # Define models 
-DEFAULT_MODEL = os.getenv("GROQ_MODEL","openai/gpt-oss-120b")
+DEFAULT_MODEL = os.getenv("GROQ_MODEL","openai/gpt-oss-20b")
 
 ALLOWED_MODEL = {
-    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
     "qwen/qwen3.6-27b"
 }
 
-# System prompt
+# Define system prompt
 SYSTEM_PROMPT = """
-You are a helpful Agentic AI assistant named Dost AI similar to ChatGPT, Claude, Gemini, etc....
+You are a helpful Agentic AI assistant named Dost AI, similar to ChatGPT, Claude, Gemini, etc.
 
 You can:
 1. Answer normal questions.
 2. Use tools when needed.
-3. Search uploaded documents using the RAG tool.
+3. Search uploaded documents using the retrieve_docs tool.
 4. Search the web for latest/current information using Tavily Search.
-5. Remember important user information using the memory tool.
+5. Remember important user information using the remember_chats tool.
 6. Recall memory when useful.
 7. Use calculator for math.
+8. Search and answer questions about YouTube videos using search_youtube_video.
 
 Rules:
-- If the user provides his/her name start the conversation with his/her name or with a word 'Bro'.
-- If the user asks about latest news, current events, recent updates, today's information, current prices, current people, current versions, new releases, or anything time-sensitive, use Tavily Search.
-- If the user asks about an uploaded document, use search_uploaded_documents.
-- If the user asks you to remember something, use remember_this.
-- If the user asks about previous preferences or saved facts, use recall_memory.
+
+- If the user provides his/her name, start the conversation with his/her name or with the word "Bro".
+
+- If the user asks about latest news, current events, recent updates,
+  today's information, current prices, current people, current versions,
+  new releases, or anything time-sensitive, use Tavily Search.
+
+- If the user asks about an uploaded PDF, DOCX, TXT, Markdown,
+  notes, or other uploaded document, use retrieve_docs.
+
+- If the user asks you to remember something, use remember_chats.
+
+- If the user asks about previous preferences or saved facts,
+  use recall_memory.
+
 - Use calculator for math questions.
-- When using web search, summarize clearly and mention that the answer is based on web search results.
-- Be clear, helpful, and concise.
+
+- When using web search, summarize clearly and mention that the answer
+  is based on web search results.
+
+YOUTUBE RULE:
+
+- If the user's message contains a YouTube URL and the user asks
+  ANYTHING about that video, ALWAYS use search_youtube_video.
+
+- Do NOT answer YouTube questions from your own knowledge.
+
+- Extract the YouTube URL from the user's message and pass it as
+  the youtube_url argument.
+
+- Pass the user's actual question about the video as the question argument.
+
+- Do NOT use retrieve_docs for YouTube URLs.
+
+Examples:
+
+User:
+"https://www.youtube.com/watch?v=QDLIQ5IL2Bk
+What is this video about?"
+
+Action:
+Call search_youtube_video with:
+youtube_url = "https://www.youtube.com/watch?v=QDLIQ5IL2Bk"
+question = "What is this video about?"
+
+User:
+"https://www.youtube.com/watch?v=QDLIQ5IL2Bk
+Explain the main concept."
+
+Action:
+Call search_youtube_video.
+
+User:
+"https://www.youtube.com/watch?v=QDLIQ5IL2Bk
+What does the speaker say about RAG?"
+
+Action:
+Call search_youtube_video.
+
+Be clear, helpful, and concise.
 """
 
 # Check if user provides model is matching or not 
@@ -80,11 +133,20 @@ def build_agent(model_name: str):
     # define llm tool 
     llm_with_tool = llm.bind_tools(all_tools) 
 
-    # define chat node 
-    def chat_node(state:MessagesState): 
-        messages = [SystemMessage(content=SYSTEM_PROMPT)] + state["messages"]
+
+    # define chat node
+    def chat_node(state: MessagesState):
+        trimmed_messages = trim_messages(
+            state["messages"],
+            max_tokens=4000,
+            strategy="last",
+            token_counter=llm,
+            include_system=False,
+            start_on="human",
+        )
+        messages = [SystemMessage(content=SYSTEM_PROMPT)] + trimmed_messages
         response = llm_with_tool.invoke(messages)
-        return {"messages":[response]}
+        return {"messages": [response]}
 
     # define tool node
     tool_node = ToolNode(all_tools)
