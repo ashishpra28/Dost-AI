@@ -28,3 +28,5 @@ sentence-transformers==6.0.0
 langchain-huggingface==1.2.2
 
 youtube-transcript-api==1.2.4
+
+huggingface-hub==1.30.0
