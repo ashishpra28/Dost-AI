@@ -3,6 +3,7 @@ from langchain_core.tools import tool
 from langchain_tavily import TavilySearch 
 from dotenv import load_dotenv 
 from database import save_memory, search_memory 
+from rag.indexing import indexing_pipeline
 from rag.retrieval import retriever_pipeline 
 
 import math 
@@ -50,6 +51,28 @@ web_search = TavilySearch(
     search_depth = "fast"
 )
 
+
+# Define youtube tool
+@tool
+def search_youtube_video(youtube_url: str, question: str):
+    """
+    Search and answer questions about a YouTube video.
+
+    Use this tool whenever the user provides a YouTube URL
+    and asks anything about the video's content.
+    """
+
+    indexing_pipeline(
+        source=youtube_url,
+        thread_id=CURRENT_THREAD_ID
+    )
+
+    return retriever_pipeline(
+        query=question,
+        thread_id=CURRENT_THREAD_ID
+    )
+
+
 # Define tool for remembering chats
 @tool
 def remember_chats(memory: str) -> str:
@@ -77,11 +100,14 @@ def recall_memory(query: str) -> str:
     )
 
 # Define retriever tool 
-@tool 
-def retrieve_docs(query:str): 
+@tool
+def retrieve_docs(query: str):
     """
-    Search uploaded documents for relevant information.
-    Use this when the user asks about uploaded YouTube links, PDFs, DOCX, TXT, notes, files, or documents.
+    Search previously indexed uploaded documents such as PDFs,
+    DOCX, TXT, Markdown, or other files.
+
+    Do not use this tool for YouTube URLs.
+    Use search_youtube_video for YouTube URLs.
     """
 
     return retriever_pipeline(
@@ -89,10 +115,14 @@ def retrieve_docs(query:str):
         thread_id=CURRENT_THREAD_ID
     )
 
+
+
+
 # Create all tools list 
 all_tools = [
     calculator,
     web_search,
+    search_youtube_video,
     remember_chats,
     recall_memory,
     retrieve_docs
