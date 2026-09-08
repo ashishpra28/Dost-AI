@@ -11,7 +11,7 @@ def detect_source_type(source):
     """Detect whether the source is YouTube, website, or file."""
 
     # for youtube 
-    if ("youtube.com" in source):
+    if "youtube.com" in source or "youtu.be" in source:
         return "Youtube"
     
     # for website 
@@ -42,11 +42,19 @@ def detect_source_type(source):
 
 # Extract video id
 def extract_video_id(url):
-    """Extract YouTube video ID"""
+    """Extract YouTube video ID."""
 
-    if "youtu.be" in url:
-        return url.split("/")[-1]
-    return parse_qs(urlparse(url).query)["v"][0]
+    parsed_url = urlparse(url)
+
+    if parsed_url.hostname in ["youtu.be", "www.youtu.be"]:
+        return parsed_url.path.strip("/").split("/")[0]
+
+    video_id = parse_qs(parsed_url.query).get("v")
+
+    if not video_id:
+        raise ValueError("Invalid YouTube URL.")
+
+    return video_id[0]
     
 # Create youtube transcript loader 
 def load_youtube(source):
