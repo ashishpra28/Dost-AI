@@ -2,7 +2,7 @@
 
 > An intelligent AI assistant built with LangGraph, LangChain, RAG, FastAPI, and modern LLM technologies.
 
-Dost AI is a ChatGPT-like AI assistant designed to go beyond simple conversations.
+Dost AI is an AI assistant designed to go beyond simple conversations.
 
 It can search the web, understand uploaded documents and YouTube videos, remember important information, perform calculations, and generate images - all through an agentic tool-calling workflow.
 
