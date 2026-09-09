@@ -1,0 +1,53 @@
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# RAG / local vector database
+chroma_db/
+
+# User data
+uploads/
+generated_images/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
