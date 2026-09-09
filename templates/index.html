@@ -573,6 +573,43 @@ textarea {
   border: 1px solid var(--border);
 }
 
+.generated-image-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 12px;
+}
+
+.generated-image-wrap .generated-image {
+  margin-top: 0;
+}
+
+.image-download-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(18, 19, 26, 0.75);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.generated-image-wrap:hover .image-download-btn {
+  opacity: 1;
+}
+
+.image-download-btn:hover {
+  background: var(--accent);
+  color: #1a0f04;
+}
+
 /* ---------- Scrollbars ---------- */
 
 .chat-scroll::-webkit-scrollbar,
@@ -819,7 +856,7 @@ const els = {
   attachBtn: document.getElementById("attachBtn"),
   fileInput: document.getElementById("fileInput"),
 
-  // NEW: microphone button
+  // Microphone button
   micBtn: document.getElementById("micBtn"),
 };
 
@@ -1109,7 +1146,7 @@ async function init() {
   );
 
 
-  // NEW: microphone button
+  // Microphone button
   els.micBtn.addEventListener(
     "click",
     toggleDictation
@@ -1413,6 +1450,19 @@ function buildMessageEl(m) {
 
     body.appendChild(text);
 
+    if (Array.isArray(m.images)) {
+
+      m.images.forEach((src) => {
+
+        body.insertAdjacentHTML(
+          "beforeend",
+          buildGeneratedImageHtml(src)
+        );
+
+      });
+
+    }
+
   }
 
 
@@ -1499,6 +1549,153 @@ function escapeHtml(str) {
 }
 
 
+/* ============================================================
+   IMAGE HELPERS
+   ============================================================ */
+
+function normalizeImageSrc(src) {
+
+  let value =
+    (src || "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  /*
+   * Backend route:
+   *
+   * /generated-images/filename.png
+   *
+   * Sometimes the LLM returns:
+   *
+   * /generated_images/filename.png
+   *
+   * Convert underscore version to the real
+   * FastAPI static route.
+   */
+
+  value =
+    value.replace(
+      /^\/?generated_images\//i,
+      "/generated-images/"
+    );
+
+
+  if (
+    !/^https?:\/\//i.test(value) &&
+    !value.startsWith("/")
+  ) {
+
+    value =
+      "/" + value;
+
+  }
+
+
+  return value;
+
+}
+
+
+function buildGeneratedImageHtml(
+  src,
+  alt = "Generated image"
+) {
+
+  const normalizedSrc =
+    normalizeImageSrc(src);
+
+  const safeAlt =
+    escapeHtml(alt);
+
+  const fileName =
+    normalizedSrc.split("/").pop() ||
+    "generated-image.png";
+
+
+  return `
+    <div class="generated-image-wrap">
+
+      <img
+        src="${normalizedSrc}"
+        alt="${safeAlt}"
+        class="generated-image"
+        loading="lazy"
+      />
+
+      <a
+        class="image-download-btn"
+        href="${normalizedSrc}"
+        download="${fileName}"
+        title="Download image"
+        aria-label="Download image"
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 18 18"
+          fill="none"
+        >
+          <path
+            d="M9 3v8m0 0l-3-3m3 3l3-3M4 14h10"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </a>
+
+    </div>
+  `;
+
+}
+
+
+function cleanGeneratedImageMarkdown(content) {
+
+  /*
+   * If the LLM itself returns something like:
+   *
+   * ![Dog](generated_images/image_xxx.png)
+   *
+   * the backend already sends the image separately
+   * through the SSE { image: ... } event.
+   *
+   * Remove that markdown image so it isn't duplicated.
+   */
+
+  return (content || "").replace(
+    /!\[[^\]]*\]\(\/?generated[-_]images\/[^)]+\)/gi,
+    ""
+  );
+
+}
+
+
+function renderStreamingImages(
+  container,
+  imageUrls
+) {
+
+  if (!Array.isArray(imageUrls)) {
+    return;
+  }
+
+
+  imageUrls.forEach((src) => {
+
+    container.insertAdjacentHTML(
+      "beforeend",
+      buildGeneratedImageHtml(src)
+    );
+
+  });
+
+}
+
+
 function formatContent(content) {
 
   const escaped =
@@ -1507,12 +1704,34 @@ function formatContent(content) {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
+
   return escaped
     .split(/\n{2,}/)
-    .map(
-      (para) =>
-        `<p>${para.replace(/\n/g, "<br>")}</p>`
-    )
+    .map((para) => {
+
+      const imgMatch =
+        para.match(
+          /^!\[([^\]]*)\]\(([^)]+)\)$/
+        );
+
+
+      if (imgMatch) {
+
+        return buildGeneratedImageHtml(
+          imgMatch[2],
+          imgMatch[1] ||
+            "Generated image"
+        );
+
+      }
+
+
+      return `<p>${para.replace(
+        /\n/g,
+        "<br>"
+      )}</p>`;
+
+    })
     .join("");
 
 }
@@ -1562,9 +1781,12 @@ async function handleUpload(e) {
   const file =
     e.target.files[0];
 
-  e.target.value = "";
+  e.target.value =
+    "";
 
-  if (!file) return;
+  if (!file) {
+    return;
+  }
 
 
   const thread =
@@ -1581,17 +1803,23 @@ async function handleUpload(e) {
 
   thread.messages.push({
 
-    id: fileMsgId,
+    id:
+      fileMsgId,
 
-    role: "user",
+    role:
+      "user",
 
-    kind: "file",
+    kind:
+      "file",
 
-    fileName: file.name,
+    fileName:
+      file.name,
 
-    statusText: "Uploading...",
+    statusText:
+      "Uploading...",
 
-    status: "uploading",
+    status:
+      "uploading",
 
   });
 
@@ -1602,10 +1830,12 @@ async function handleUpload(e) {
   const formData =
     new FormData();
 
+
   formData.append(
     "file",
     file
   );
+
 
   formData.append(
     "thread_id",
@@ -1619,8 +1849,11 @@ async function handleUpload(e) {
       await fetch(
         UPLOAD_ENDPOINT,
         {
-          method: "POST",
-          body: formData
+          method:
+            "POST",
+
+          body:
+            formData
         }
       );
 
@@ -1634,8 +1867,14 @@ async function handleUpload(e) {
       fileMsgId,
 
       data.success
-        ? (data.message || "Uploaded")
-        : (data.message || "Upload failed"),
+        ? (
+            data.message ||
+            "Uploaded"
+          )
+        : (
+            data.message ||
+            "Upload failed"
+          ),
 
       data.success
         ? "done"
@@ -1651,8 +1890,10 @@ async function handleUpload(e) {
           ? file.name
           : thread.title;
 
+
       thread.updatedAt =
         Date.now();
+
 
       renderThreadList();
 
@@ -1662,7 +1903,8 @@ async function handleUpload(e) {
 
     updateFileChip(
       fileMsgId,
-      "Upload failed: " + err.message,
+      "Upload failed: " +
+        err.message,
       "failed"
     );
 
@@ -1680,12 +1922,17 @@ function updateFileChip(
   const thread =
     currentThread();
 
+
   const msg =
     thread.messages.find(
-      (m) => m.id === id
+      (m) =>
+        m.id === id
     );
 
-  if (!msg) return;
+
+  if (!msg) {
+    return;
+  }
 
 
   msg.statusText =
@@ -1696,7 +1943,10 @@ function updateFileChip(
 
 
   const chipEl =
-    document.getElementById(id);
+    document.getElementById(
+      id
+    );
+
 
   const statusEl =
     document.getElementById(
@@ -1733,11 +1983,14 @@ async function handleSend() {
   const text =
     els.messageInput.value.trim();
 
+
   if (
     !text ||
     state.isStreaming
   ) {
+
     return;
+
   }
 
 
@@ -1749,9 +2002,11 @@ async function handleSend() {
 
     thread.title =
       text.slice(0, 40) +
-      (text.length > 40
-        ? "..."
-        : "");
+      (
+        text.length > 40
+          ? "..."
+          : ""
+      );
 
   }
 
@@ -1782,9 +2037,11 @@ async function handleSend() {
   els.messageInput.value =
     "";
 
+
   autoResize(
     els.messageInput
   );
+
 
   els.sendBtn.disabled =
     true;
@@ -1832,9 +2089,18 @@ async function handleSend() {
     true;
 
 
-  let fullText = "";
+  let fullText =
+    "";
 
-  let first = true;
+  /*
+   * Store generated images separately.
+   *
+   * This prevents the image from disappearing
+   * when new text tokens arrive.
+   */
+
+  let generatedImageUrls =
+    [];
 
 
   try {
@@ -1843,7 +2109,8 @@ async function handleSend() {
       await fetch(
         CHAT_ENDPOINT,
         {
-          method: "POST",
+          method:
+            "POST",
 
           headers: {
             "Content-Type":
@@ -1882,10 +2149,13 @@ async function handleSend() {
     const reader =
       response.body.getReader();
 
+
     const decoder =
       new TextDecoder();
 
-    let buffer = "";
+
+    let buffer =
+      "";
 
 
     while (true) {
@@ -1897,38 +2167,49 @@ async function handleSend() {
         await reader.read();
 
 
-      if (done) break;
+      if (done) {
+        break;
+      }
 
 
       buffer +=
         decoder.decode(
           value,
           {
-            stream: true
+            stream:
+              true
           }
         );
 
 
       const events =
-        buffer.split("\n\n");
+        buffer.split(
+          "\n\n"
+        );
 
 
       buffer =
         events.pop();
 
 
-      for (const evt of events) {
+      for (
+        const evt of events
+      ) {
 
         const line =
           evt
             .split("\n")
             .find(
               (l) =>
-                l.startsWith("data:")
+                l.startsWith(
+                  "data:"
+                )
             );
 
 
-        if (!line) continue;
+        if (!line) {
+          continue;
+        }
 
 
         let payload;
@@ -1938,7 +2219,9 @@ async function handleSend() {
 
           payload =
             JSON.parse(
-              line.slice(5).trim()
+              line
+                .slice(5)
+                .trim()
             );
 
         } catch {
@@ -1959,12 +2242,14 @@ async function handleSend() {
 
         /*
          * =====================================================
-         * NEW IMAGE EVENT
+         * IMAGE EVENT
+         * =====================================================
          *
          * Backend sends:
          *
          * {
-         *   "image": "/generated-images/image_xxx.png"
+         *   "image":
+         *   "/generated-images/image_xxx.png"
          * }
          *
          * =====================================================
@@ -1972,33 +2257,48 @@ async function handleSend() {
 
         if (payload.image) {
 
-          if (first) {
+          const imageUrl =
+            normalizeImageSrc(
+              payload.image
+            );
 
-            assistantEl.innerHTML =
-              "";
 
-            first = false;
+          if (
+            imageUrl &&
+            !generatedImageUrls.includes(
+              imageUrl
+            )
+          ) {
+
+            generatedImageUrls.push(
+              imageUrl
+            );
 
           }
 
 
-          const image =
-            document.createElement(
-              "img"
+          /*
+           * Re-render the text + all images together.
+           *
+           * This is important because the token event
+           * should NOT remove an already generated image.
+           */
+
+          const displayText =
+            cleanGeneratedImageMarkdown(
+              fullText
             );
 
-          image.src =
-            payload.image;
 
-          image.alt =
-            "Generated image";
-
-          image.className =
-            "generated-image";
+          assistantEl.innerHTML =
+            formatContent(
+              displayText.trim()
+            );
 
 
-          assistantEl.appendChild(
-            image
+          renderStreamingImages(
+            assistantEl,
+            generatedImageUrls
           );
 
 
@@ -2015,24 +2315,43 @@ async function handleSend() {
 
         if (payload.token) {
 
-          if (first) {
-
-            assistantEl.innerHTML =
-              "";
-
-            first = false;
-
-          }
-
-
           fullText +=
             payload.token;
 
 
-          assistantEl.innerHTML =
-            formatContent(
+          /*
+           * Remove generated-image markdown returned
+           * by the LLM because the actual image is already
+           * handled by the { image: ... } SSE event.
+           */
+
+          const displayText =
+            cleanGeneratedImageMarkdown(
               fullText
             );
+
+
+          /*
+           * Rebuild text first...
+           */
+
+          assistantEl.innerHTML =
+            formatContent(
+              displayText.trim()
+            );
+
+
+          /*
+           * ...then add all generated images again.
+           *
+           * This means images never disappear when
+           * streaming text arrives.
+           */
+
+          renderStreamingImages(
+            assistantEl,
+            generatedImageUrls
+          );
 
 
           scrollToBottom();
@@ -2051,11 +2370,31 @@ async function handleSend() {
     }
 
 
-    thread.messages.find(
-      (m) =>
-        m.id === assistantMsgId
-    ).content =
-      fullText;
+    /*
+     * Save assistant message in frontend state.
+     */
+
+    const assistantMessage =
+      thread.messages.find(
+        (m) =>
+          m.id === assistantMsgId
+      );
+
+
+    if (assistantMessage) {
+
+      assistantMessage.content =
+        cleanGeneratedImageMarkdown(
+          fullText
+        ).trim();
+
+
+      assistantMessage.images =
+        [
+          ...generatedImageUrls
+        ];
+
+    }
 
 
     thread.updatedAt =
@@ -2073,11 +2412,19 @@ async function handleSend() {
       </span>`;
 
 
-    thread.messages.find(
-      (m) =>
-        m.id === assistantMsgId
-    ).content =
-      assistantEl.textContent;
+    const errorMessage =
+      thread.messages.find(
+        (m) =>
+          m.id === assistantMsgId
+      );
+
+
+    if (errorMessage) {
+
+      errorMessage.content =
+        assistantEl.textContent;
+
+    }
 
 
   } finally {
