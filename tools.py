@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from database import save_memory, search_memory 
 from rag.indexing import indexing_pipeline
 from rag.retrieval import retriever_pipeline 
+from huggingface_hub import InferenceClient
 
 import math 
 import os 
@@ -73,6 +74,40 @@ def search_youtube_video(youtube_url: str, question: str):
     )
 
 
+# Define image generation tool 
+hf_client = InferenceClient(
+    provider="auto",
+    api_key=os.getenv("HF_TOKEN")
+)
+
+@tool
+def generate_image(prompt: str) -> str:
+    """
+    Generate an image from a text description.
+
+    Use this tool when the user asks to create, generate,
+    draw, or make an image.
+    """
+
+    try:
+        image = hf_client.text_to_image(
+            prompt=prompt,
+            model="black-forest-labs/FLUX.1-dev"
+        )
+
+        os.makedirs("generated_images", exist_ok=True)
+
+        filename = f"generated_images/image_{os.urandom(4).hex()}.png"
+
+        image.save(filename)
+
+        return f"IMAGE_GENERATED:{filename}"
+
+    except Exception as e:
+        print("IMAGE GENERATION ERROR:", repr(e))
+        return f"Image generation error: {str(e)}"
+    
+
 # Define tool for remembering chats
 @tool
 def remember_chats(memory: str) -> str:
@@ -116,13 +151,12 @@ def retrieve_docs(query: str):
     )
 
 
-
-
 # Create all tools list 
 all_tools = [
     calculator,
     web_search,
     search_youtube_video,
+    generate_image,
     remember_chats,
     recall_memory,
     retrieve_docs

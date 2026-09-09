@@ -529,6 +529,12 @@ textarea {
   color: var(--text);
 }
 
+/* Mic recording state */
+.composer-icon-btn.recording {
+  background: var(--accent-wash);
+  color: var(--accent-strong);
+}
+
 .send-btn {
   background: var(--text-faint);
   color: #12131a;
@@ -553,6 +559,18 @@ textarea {
   font-size: 11.5px;
   color: var(--text-faint);
   margin: 8px 0 0;
+}
+
+/* ---------- Generated Image ---------- */
+
+.generated-image {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  max-height: 600px;
+  margin-top: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
 }
 
 /* ---------- Scrollbars ---------- */
@@ -595,6 +613,7 @@ textarea {
 
 </style>
 </head>
+
 <body>
 
 <div class="app">
@@ -603,14 +622,18 @@ textarea {
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-top">
       <button class="new-chat-btn" id="newChatBtn">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1V15M1 8H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1V15M1 8H15"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"/>
+        </svg>
         New chat
       </button>
     </div>
 
     <div class="thread-list" id="threadList">
       <div class="thread-list-label">Recent</div>
-      <!-- thread items injected by app.js -->
     </div>
   </aside>
 
@@ -619,14 +642,20 @@ textarea {
 
     <header class="topbar">
       <button class="icon-btn" id="sidebarToggle" aria-label="Toggle sidebar">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="1.6" rx="0.8" fill="currentColor"/><rect x="2" y="8.2" width="14" height="1.6" rx="0.8" fill="currentColor"/><rect x="2" y="12.4" width="14" height="1.6" rx="0.8" fill="currentColor"/></svg>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="2" y="4" width="14" height="1.6" rx="0.8" fill="currentColor"/>
+          <rect x="2" y="8.2" width="14" height="1.6" rx="0.8" fill="currentColor"/>
+          <rect x="2" y="12.4" width="14" height="1.6" rx="0.8" fill="currentColor"/>
+        </svg>
       </button>
+
       <span class="topbar-title">Dost AI</span>
     </header>
 
     <section class="chat-scroll" id="chatScroll">
 
       <div class="empty-state" id="emptyState">
+
         <div class="sparkles" aria-hidden="true">
           <span class="sparkle" style="top:12%; left:18%; animation-delay:0s; animation-duration:3.2s;"></span>
           <span class="sparkle" style="top:22%; left:78%; animation-delay:0.6s; animation-duration:2.8s;"></span>
@@ -641,13 +670,25 @@ textarea {
         </div>
 
         <h1 class="greeting">Kya haal hai, dost?</h1>
-        <p class="greeting-sub">Ask me anything — writing, understanding a concept, or just to chat.</p>
+
+        <p class="greeting-sub">
+          Ask me anything — writing, understanding a concept, or just to chat.
+        </p>
 
         <div class="suggestion-row">
-          <button class="suggestion-chip" data-prompt="What's today's top news?">Today's top news</button>
-          <button class="suggestion-chip" data-prompt="Explain photosynthesis in simple terms">Explain a concept</button>
-          <button class="suggestion-chip" data-prompt="Calculate a 15% tip on 850">Do a calculation</button>
+          <button class="suggestion-chip" data-prompt="What's today's top news?">
+            Today's top news
+          </button>
+
+          <button class="suggestion-chip" data-prompt="Explain photosynthesis in simple terms">
+            Explain a concept
+          </button>
+
+          <button class="suggestion-chip" data-prompt="Calculate a 15% tip on 850">
+            Do a calculation
+          </button>
         </div>
+
       </div>
 
       <div class="messages" id="messages"></div>
@@ -655,7 +696,9 @@ textarea {
     </section>
 
     <div class="composer-wrap">
+
       <div class="composer" id="composer">
+
         <div class="composer-toolbar">
           <select id="modelSelect" class="model-select">
             <option value="openai/gpt-oss-120b" selected>GPT-OSS 120B</option>
@@ -665,10 +708,29 @@ textarea {
         </div>
 
         <div class="composer-row">
-          <button class="composer-icon-btn" id="attachBtn" aria-label="Attach file" title="Upload document">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3.5V14.5M3.5 9H14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+
+          <button
+            class="composer-icon-btn"
+            id="attachBtn"
+            aria-label="Attach file"
+            title="Upload document"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M9 3.5V14.5M3.5 9H14.5"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+            </svg>
           </button>
-          <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md,.py,.csv" style="display:none" />
+
+          <input
+            type="file"
+            id="fileInput"
+            accept=".pdf,.docx,.txt,.md,.py,.csv"
+            style="display:none"
+          />
 
           <textarea
             id="messageInput"
@@ -677,30 +739,62 @@ textarea {
             rows="1"
           ></textarea>
 
-          <button class="composer-icon-btn send-btn" id="sendBtn" aria-label="Send message" disabled>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9H15M15 9L10 4M15 9L10 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <!-- MIC BUTTON -->
+          <button
+            class="composer-icon-btn"
+            id="micBtn"
+            aria-label="Voice input"
+            title="Voice input"
+          >
+            🎙️
           </button>
+
+          <button
+            class="composer-icon-btn send-btn"
+            id="sendBtn"
+            aria-label="Send message"
+            disabled
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M3 9H15M15 9L10 4M15 9L10 14"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+
         </div>
       </div>
-      <p class="composer-hint">Dost AI can make mistakes — check important info.</p>
+
+      <p class="composer-hint">
+        Dost AI can make mistakes — check important info.
+      </p>
+
     </div>
 
   </main>
 </div>
 
 <script>
+
 /*
   Dost AI — frontend logic
   --------------------------------------------------------------
   Wired to the actual app.py routes:
 
-  GET  /conversations           -> { conversations: [{thread_id, title, created_at, updated_at}] }
-  GET  /history/{thread_id}     -> { messages: [{role, content}] }
-  POST /upload  (multipart)     -> file, thread_id  =>  { success, message }
-  POST /chat/stream             -> body: { message, thread_id, model }
-                                    response: text/event-stream,
-                                    each event "data: {...}\n\n" with
-                                    { token } | { done: true } | { error }
+  GET  /conversations
+  GET  /history/{thread_id}
+  POST /upload
+  POST /chat/stream
+
+  SSE events:
+  { token }
+  { image }
+  { done: true }
+  { error }
   --------------------------------------------------------------
 */
 
@@ -724,396 +818,1278 @@ const els = {
   modelSelect: document.getElementById("modelSelect"),
   attachBtn: document.getElementById("attachBtn"),
   fileInput: document.getElementById("fileInput"),
+
+  // NEW: microphone button
+  micBtn: document.getElementById("micBtn"),
 };
 
 let state = {
   threadId: null,
-  threads: {},   // id -> { id, title, messages: null|[], updatedAt, loaded }
+  threads: {},
   isStreaming: false,
 };
+
+
+/* ============================================================
+   SPEECH RECOGNITION
+   ============================================================ */
+
+let recognition = null;
+let isDictating = false;
+
+function setupSpeechRecognition() {
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    return null;
+  }
+
+  const speechRecognition = new SpeechRecognition();
+
+  speechRecognition.lang = "en-US";
+  speechRecognition.continuous = true;
+  speechRecognition.interimResults = true;
+
+  speechRecognition.onstart = () => {
+
+    isDictating = true;
+
+    if (els.micBtn) {
+      els.micBtn.classList.add("recording");
+      els.micBtn.textContent = "⏹️";
+    }
+
+  };
+
+  speechRecognition.onresult = (event) => {
+
+    let finalTranscript = "";
+    let interimTranscript = "";
+
+    for (
+      let i = event.resultIndex;
+      i < event.results.length;
+      i++
+    ) {
+
+      const transcript =
+        event.results[i][0].transcript;
+
+      if (event.results[i].isFinal) {
+
+        finalTranscript += transcript + " ";
+
+      } else {
+
+        interimTranscript += transcript;
+
+      }
+    }
+
+    if (finalTranscript) {
+
+      const currentText =
+        els.messageInput.value.trim();
+
+      els.messageInput.value =
+        currentText
+          ? currentText + " " + finalTranscript.trim()
+          : finalTranscript.trim();
+
+      autoResize(els.messageInput);
+
+      els.sendBtn.disabled =
+        els.messageInput.value.trim().length === 0;
+    }
+
+  };
+
+  speechRecognition.onerror = (event) => {
+
+    console.error(
+      "Speech recognition error:",
+      event.error
+    );
+
+    if (event.error === "not-allowed") {
+
+      alert(
+        "Microphone permission denied. Please allow microphone access."
+      );
+
+    }
+
+    stopDictation();
+
+  };
+
+  speechRecognition.onend = () => {
+
+    if (isDictating) {
+
+      try {
+
+        speechRecognition.start();
+
+      } catch (error) {
+
+        stopDictation();
+
+      }
+
+    }
+
+  };
+
+  return speechRecognition;
+}
+
+
+function toggleDictation() {
+
+  if (!recognition) {
+
+    recognition =
+      setupSpeechRecognition();
+
+  }
+
+  if (!recognition) {
+
+    alert(
+      "Speech recognition is not supported in this browser. Please use Chrome or Edge."
+    );
+
+    return;
+  }
+
+  if (isDictating) {
+
+    stopDictation();
+
+  } else {
+
+    startDictation();
+
+  }
+}
+
+
+function startDictation() {
+
+  try {
+
+    recognition.start();
+
+  } catch (error) {
+
+    console.error(
+      "Could not start dictation:",
+      error
+    );
+
+  }
+
+}
+
+
+function stopDictation() {
+
+  isDictating = false;
+
+  if (recognition) {
+
+    try {
+
+      recognition.stop();
+
+    } catch (error) {
+
+      console.error(
+        "Could not stop dictation:",
+        error
+      );
+
+    }
+
+  }
+
+  if (els.micBtn) {
+
+    els.micBtn.classList.remove("recording");
+    els.micBtn.textContent = "🎙️";
+
+  }
+
+}
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
 
 init();
 
 async function init() {
-  els.sidebarToggle.addEventListener("click", toggleSidebar);
+
+  els.sidebarToggle.addEventListener(
+    "click",
+    toggleSidebar
+  );
 
   els.newChatBtn.addEventListener("click", () => {
+
     createLocalThread();
     renderThreadList();
     renderMessages();
+
   });
+
 
   els.messageInput.addEventListener("input", () => {
+
     autoResize(els.messageInput);
-    els.sendBtn.disabled = els.messageInput.value.trim().length === 0;
+
+    els.sendBtn.disabled =
+      els.messageInput.value.trim().length === 0;
+
   });
+
 
   els.messageInput.addEventListener("keydown", (e) => {
+
     if (e.key === "Enter" && !e.shiftKey) {
+
       e.preventDefault();
+
       handleSend();
+
     }
+
   });
 
-  els.sendBtn.addEventListener("click", handleSend);
 
-  document.querySelectorAll(".suggestion-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      els.messageInput.value = chip.dataset.prompt;
-      autoResize(els.messageInput);
-      els.sendBtn.disabled = false;
-      handleSend();
+  els.sendBtn.addEventListener(
+    "click",
+    handleSend
+  );
+
+
+  document
+    .querySelectorAll(".suggestion-chip")
+    .forEach((chip) => {
+
+      chip.addEventListener("click", () => {
+
+        els.messageInput.value =
+          chip.dataset.prompt;
+
+        autoResize(els.messageInput);
+
+        els.sendBtn.disabled = false;
+
+        handleSend();
+
+      });
+
     });
-  });
 
-  els.attachBtn.addEventListener("click", () => els.fileInput.click());
 
-  els.fileInput.addEventListener("change", handleUpload);
+  els.attachBtn.addEventListener(
+    "click",
+    () => els.fileInput.click()
+  );
+
+
+  els.fileInput.addEventListener(
+    "change",
+    handleUpload
+  );
+
+
+  // NEW: microphone button
+  els.micBtn.addEventListener(
+    "click",
+    toggleDictation
+  );
+
 
   await loadConversations();
 
+
   if (!state.threadId) {
+
     createLocalThread();
+
   }
 
+
   renderThreadList();
+
   await selectThread(state.threadId);
+
 }
 
-/* ---------- Conversations (backend-synced) ---------- */
+
+/* ============================================================
+   CONVERSATIONS
+   ============================================================ */
 
 async function loadConversations() {
+
   try {
-    const res = await fetch(CONVERSATIONS_ENDPOINT);
+
+    const res =
+      await fetch(CONVERSATIONS_ENDPOINT);
+
     if (!res.ok) return;
 
-    const data = await res.json();
+    const data =
+      await res.json();
 
     (data.conversations || []).forEach((c) => {
+
       state.threads[c.thread_id] = {
+
         id: c.thread_id,
-        title: c.title || "New Chat",
+
+        title:
+          c.title || "New Chat",
+
         messages: null,
-        updatedAt: new Date(c.updated_at).getTime(),
+
+        updatedAt:
+          new Date(c.updated_at).getTime(),
+
         loaded: false,
+
       };
+
     });
 
-    const mostRecent = Object.values(state.threads).sort((a, b) => b.updatedAt - a.updatedAt)[0];
-    if (mostRecent) state.threadId = mostRecent.id;
+
+    const mostRecent =
+      Object.values(state.threads)
+        .sort(
+          (a, b) =>
+            b.updatedAt - a.updatedAt
+        )[0];
+
+
+    if (mostRecent) {
+
+      state.threadId =
+        mostRecent.id;
+
+    }
+
   } catch (err) {
-    // backend not reachable yet — fall back to a fresh local thread
+
+    // backend not reachable yet
+
   }
+
 }
+
 
 function createLocalThread() {
-  const id = crypto.randomUUID ? crypto.randomUUID() : "thread_" + Date.now();
+
+  const id =
+    crypto.randomUUID
+      ? crypto.randomUUID()
+      : "thread_" + Date.now();
+
   state.threads[id] = {
+
     id,
+
     title: "New chat",
+
     messages: [],
+
     updatedAt: Date.now(),
+
     loaded: true,
+
   };
+
   state.threadId = id;
+
 }
+
 
 function currentThread() {
-  return state.threads[state.threadId];
+
+  return state.threads[
+    state.threadId
+  ];
+
 }
+
 
 async function selectThread(threadId) {
+
   state.threadId = threadId;
-  const thread = currentThread();
+
+  const thread =
+    currentThread();
+
 
   if (thread && !thread.loaded) {
+
     try {
-      const res = await fetch(`${HISTORY_ENDPOINT}/${encodeURIComponent(threadId)}`);
+
+      const res =
+        await fetch(
+          `${HISTORY_ENDPOINT}/${encodeURIComponent(threadId)}`
+        );
+
+
       if (res.ok) {
-        const data = await res.json();
-        thread.messages = (data.messages || []).map((m, i) => ({
-          id: `${threadId}_${i}`,
-          role: m.role,
-          content: m.content,
-        }));
+
+        const data =
+          await res.json();
+
+        thread.messages =
+          (data.messages || [])
+            .map((m, i) => ({
+
+              id:
+                `${threadId}_${i}`,
+
+              role:
+                m.role,
+
+              content:
+                m.content,
+
+            }));
+
       } else {
+
         thread.messages = [];
+
       }
+
     } catch {
+
       thread.messages = [];
+
     }
+
     thread.loaded = true;
+
   }
+
 
   renderThreadList();
+
   renderMessages();
+
 }
+
 
 function renderThreadList() {
-  const items = Object.values(state.threads).sort((a, b) => b.updatedAt - a.updatedAt);
 
-  els.threadList.innerHTML = '<div class="thread-list-label">Recent</div>';
+  const items =
+    Object.values(state.threads)
+      .sort(
+        (a, b) =>
+          b.updatedAt - a.updatedAt
+      );
+
+
+  els.threadList.innerHTML =
+    '<div class="thread-list-label">Recent</div>';
+
 
   items.forEach((t) => {
-    const btn = document.createElement("button");
-    btn.className = "thread-item" + (t.id === state.threadId ? " active" : "");
-    btn.textContent = t.title;
-    btn.addEventListener("click", () => selectThread(t.id));
+
+    const btn =
+      document.createElement("button");
+
+    btn.className =
+      "thread-item" +
+      (t.id === state.threadId
+        ? " active"
+        : "");
+
+    btn.textContent =
+      t.title;
+
+    btn.addEventListener(
+      "click",
+      () => selectThread(t.id)
+    );
+
     els.threadList.appendChild(btn);
+
   });
+
 }
 
-/* ---------- Rendering ---------- */
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
 
 function renderMessages() {
-  const thread = currentThread();
+
+  const thread =
+    currentThread();
+
   els.messages.innerHTML = "";
 
-  if (!thread || !thread.messages || thread.messages.length === 0) {
-    els.emptyState.style.display = "block";
+
+  if (
+    !thread ||
+    !thread.messages ||
+    thread.messages.length === 0
+  ) {
+
+    els.emptyState.style.display =
+      "block";
+
     return;
+
   }
 
-  els.emptyState.style.display = "none";
+
+  els.emptyState.style.display =
+    "none";
+
 
   thread.messages.forEach((m) => {
-    els.messages.appendChild(buildMessageEl(m));
+
+    els.messages.appendChild(
+      buildMessageEl(m)
+    );
+
   });
 
+
   scrollToBottom();
+
 }
+
 
 function buildMessageEl(m) {
-  const wrap = document.createElement("div");
-  wrap.className = "msg " + m.role;
 
-  const body = document.createElement("div");
-  body.className = "msg-body";
+  const wrap =
+    document.createElement("div");
+
+  wrap.className =
+    "msg " + m.role;
+
+
+  const body =
+    document.createElement("div");
+
+  body.className =
+    "msg-body";
+
 
   if (m.kind === "file") {
-    body.appendChild(buildFileChipEl(m));
+
+    body.appendChild(
+      buildFileChipEl(m)
+    );
+
   } else {
-    const text = document.createElement("div");
-    text.className = "msg-text";
-    text.id = m.id;
-    text.innerHTML = formatContent(m.content);
+
+    const text =
+      document.createElement("div");
+
+    text.className =
+      "msg-text";
+
+    text.id =
+      m.id;
+
+    text.innerHTML =
+      formatContent(m.content);
+
     body.appendChild(text);
+
   }
 
+
   wrap.appendChild(body);
+
   return wrap;
+
 }
 
+
 function buildFileChipEl(m) {
-  const chip = document.createElement("div");
-  chip.className = "file-chip" + (m.status === "failed" ? " failed" : "");
-  chip.id = m.id;
+
+  const chip =
+    document.createElement("div");
+
+  chip.className =
+    "file-chip" +
+    (m.status === "failed"
+      ? " failed"
+      : "");
+
+  chip.id =
+    m.id;
+
 
   chip.innerHTML = `
+
     <div class="file-chip-icon">
-      <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
-        <path d="M4 2h6l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-        <path d="M10 2v4h4" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+
+      <svg
+        width="17"
+        height="17"
+        viewBox="0 0 18 18"
+        fill="none"
+      >
+
+        <path
+          d="M4 2h6l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linejoin="round"
+        />
+
+        <path
+          d="M10 2v4h4"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linejoin="round"
+        />
+
       </svg>
+
     </div>
+
     <div class="file-chip-info">
-      <span class="file-chip-name">${escapeHtml(m.fileName)}</span>
-      <span class="file-chip-status" id="${m.id}_status">${escapeHtml(m.statusText)}</span>
+
+      <span class="file-chip-name">
+        ${escapeHtml(m.fileName)}
+      </span>
+
+      <span
+        class="file-chip-status"
+        id="${m.id}_status"
+      >
+        ${escapeHtml(m.statusText)}
+      </span>
+
     </div>
+
   `;
 
   return chip;
+
 }
 
+
 function escapeHtml(str) {
+
   return (str || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+
 }
+
 
 function formatContent(content) {
-  const escaped = (content || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+
+  const escaped =
+    (content || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
   return escaped
     .split(/\n{2,}/)
-    .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+    .map(
+      (para) =>
+        `<p>${para.replace(/\n/g, "<br>")}</p>`
+    )
     .join("");
+
 }
+
 
 function autoResize(textarea) {
-  textarea.style.height = "auto";
-  textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
+
+  textarea.style.height =
+    "auto";
+
+  textarea.style.height =
+    Math.min(
+      textarea.scrollHeight,
+      200
+    ) + "px";
+
 }
+
 
 function scrollToBottom() {
-  els.chatScroll.scrollTop = els.chatScroll.scrollHeight;
+
+  els.chatScroll.scrollTop =
+    els.chatScroll.scrollHeight;
+
 }
+
 
 function toggleSidebar() {
-  els.app.classList.toggle("sidebar-collapsed");
-  els.app.classList.toggle("sidebar-open");
+
+  els.app.classList.toggle(
+    "sidebar-collapsed"
+  );
+
+  els.app.classList.toggle(
+    "sidebar-open"
+  );
+
 }
 
-/* ---------- Upload ---------- */
+
+/* ============================================================
+   UPLOAD
+   ============================================================ */
 
 async function handleUpload(e) {
-  const file = e.target.files[0];
+
+  const file =
+    e.target.files[0];
+
   e.target.value = "";
+
   if (!file) return;
 
-  const thread = currentThread();
 
-  els.emptyState.style.display = "none";
+  const thread =
+    currentThread();
 
-  const fileMsgId = "file_" + Date.now();
+
+  els.emptyState.style.display =
+    "none";
+
+
+  const fileMsgId =
+    "file_" + Date.now();
+
+
   thread.messages.push({
+
     id: fileMsgId,
+
     role: "user",
+
     kind: "file",
+
     fileName: file.name,
+
     statusText: "Uploading...",
+
     status: "uploading",
+
   });
+
+
   renderMessages();
 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("thread_id", state.threadId);
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "file",
+    file
+  );
+
+  formData.append(
+    "thread_id",
+    state.threadId
+  );
+
 
   try {
-    const res = await fetch(UPLOAD_ENDPOINT, { method: "POST", body: formData });
-    const data = await res.json();
 
-    updateFileChip(fileMsgId, data.success ? (data.message || "Uploaded") : (data.message || "Upload failed"), data.success ? "done" : "failed");
+    const res =
+      await fetch(
+        UPLOAD_ENDPOINT,
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+
+    const data =
+      await res.json();
+
+
+    updateFileChip(
+
+      fileMsgId,
+
+      data.success
+        ? (data.message || "Uploaded")
+        : (data.message || "Upload failed"),
+
+      data.success
+        ? "done"
+        : "failed"
+
+    );
+
 
     if (data.success) {
-      thread.title = thread.title === "New chat" ? file.name : thread.title;
-      thread.updatedAt = Date.now();
+
+      thread.title =
+        thread.title === "New chat"
+          ? file.name
+          : thread.title;
+
+      thread.updatedAt =
+        Date.now();
+
       renderThreadList();
+
     }
+
   } catch (err) {
-    updateFileChip(fileMsgId, "Upload failed: " + err.message, "failed");
+
+    updateFileChip(
+      fileMsgId,
+      "Upload failed: " + err.message,
+      "failed"
+    );
+
   }
+
 }
 
-function updateFileChip(id, statusText, status) {
-  const thread = currentThread();
-  const msg = thread.messages.find((m) => m.id === id);
+
+function updateFileChip(
+  id,
+  statusText,
+  status
+) {
+
+  const thread =
+    currentThread();
+
+  const msg =
+    thread.messages.find(
+      (m) => m.id === id
+    );
+
   if (!msg) return;
 
-  msg.statusText = statusText;
-  msg.status = status;
 
-  const chipEl = document.getElementById(id);
-  const statusEl = document.getElementById(id + "_status");
-  if (statusEl) statusEl.textContent = statusText;
-  if (chipEl) chipEl.classList.toggle("failed", status === "failed");
+  msg.statusText =
+    statusText;
+
+  msg.status =
+    status;
+
+
+  const chipEl =
+    document.getElementById(id);
+
+  const statusEl =
+    document.getElementById(
+      id + "_status"
+    );
+
+
+  if (statusEl) {
+
+    statusEl.textContent =
+      statusText;
+
+  }
+
+
+  if (chipEl) {
+
+    chipEl.classList.toggle(
+      "failed",
+      status === "failed"
+    );
+
+  }
+
 }
 
-/* ---------- Sending (SSE over fetch, per /chat/stream contract) ---------- */
+
+/* ============================================================
+   SENDING + SSE
+   ============================================================ */
 
 async function handleSend() {
-  const text = els.messageInput.value.trim();
-  if (!text || state.isStreaming) return;
 
-  const thread = currentThread();
+  const text =
+    els.messageInput.value.trim();
+
+  if (
+    !text ||
+    state.isStreaming
+  ) {
+    return;
+  }
+
+
+  const thread =
+    currentThread();
+
 
   if (thread.messages.length === 0) {
-    thread.title = text.slice(0, 40) + (text.length > 40 ? "..." : "");
+
+    thread.title =
+      text.slice(0, 40) +
+      (text.length > 40
+        ? "..."
+        : "");
+
   }
 
-  thread.messages.push({ id: "m_" + Date.now(), role: "user", content: text });
-  thread.updatedAt = Date.now();
+
+  thread.messages.push({
+
+    id:
+      "m_" + Date.now(),
+
+    role:
+      "user",
+
+    content:
+      text
+
+  });
+
+
+  thread.updatedAt =
+    Date.now();
+
+
   renderThreadList();
+
   renderMessages();
 
-  els.messageInput.value = "";
-  autoResize(els.messageInput);
-  els.sendBtn.disabled = true;
 
-  const assistantMsgId = "m_" + Date.now() + "_a";
-  thread.messages.push({ id: assistantMsgId, role: "assistant", content: "" });
+  els.messageInput.value =
+    "";
+
+  autoResize(
+    els.messageInput
+  );
+
+  els.sendBtn.disabled =
+    true;
+
+
+  const assistantMsgId =
+    "m_" +
+    Date.now() +
+    "_a";
+
+
+  thread.messages.push({
+
+    id:
+      assistantMsgId,
+
+    role:
+      "assistant",
+
+    content:
+      ""
+
+  });
+
+
   renderMessages();
 
-  const assistantEl = document.getElementById(assistantMsgId);
-  assistantEl.innerHTML = '<span class="dost-thinking"><span class="dost-orb"></span><span class="dost-thinking-label">Thinking...</span></span>';
 
-  state.isStreaming = true;
+  const assistantEl =
+    document.getElementById(
+      assistantMsgId
+    );
+
+
+  assistantEl.innerHTML =
+    '<span class="dost-thinking">' +
+      '<span class="dost-orb"></span>' +
+      '<span class="dost-thinking-label">' +
+        'Thinking...' +
+      '</span>' +
+    '</span>';
+
+
+  state.isStreaming =
+    true;
+
+
   let fullText = "";
+
   let first = true;
 
-  try {
-    const response = await fetch(CHAT_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: text,
-        thread_id: state.threadId,
-        model: els.modelSelect.value,
-      }),
-    });
 
-    if (!response.ok || !response.body) {
-      throw new Error(`Server returned ${response.status}`);
+  try {
+
+    const response =
+      await fetch(
+        CHAT_ENDPOINT,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            message:
+              text,
+
+            thread_id:
+              state.threadId,
+
+            model:
+              els.modelSelect.value,
+
+          }),
+
+        }
+      );
+
+
+    if (
+      !response.ok ||
+      !response.body
+    ) {
+
+      throw new Error(
+        `Server returned ${response.status}`
+      );
+
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+
+    const reader =
+      response.body.getReader();
+
+    const decoder =
+      new TextDecoder();
+
     let buffer = "";
 
+
     while (true) {
-      const { done, value } = await reader.read();
+
+      const {
+        done,
+        value
+      } =
+        await reader.read();
+
+
       if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
 
-      const events = buffer.split("\n\n");
-      buffer = events.pop(); // keep the last (possibly incomplete) chunk
+      buffer +=
+        decoder.decode(
+          value,
+          {
+            stream: true
+          }
+        );
+
+
+      const events =
+        buffer.split("\n\n");
+
+
+      buffer =
+        events.pop();
+
 
       for (const evt of events) {
-        const line = evt.split("\n").find((l) => l.startsWith("data:"));
+
+        const line =
+          evt
+            .split("\n")
+            .find(
+              (l) =>
+                l.startsWith("data:")
+            );
+
+
         if (!line) continue;
 
+
         let payload;
+
+
         try {
-          payload = JSON.parse(line.slice(5).trim());
+
+          payload =
+            JSON.parse(
+              line.slice(5).trim()
+            );
+
         } catch {
+
           continue;
+
         }
+
 
         if (payload.error) {
-          throw new Error(payload.error);
+
+          throw new Error(
+            payload.error
+          );
+
         }
+
+
+        /*
+         * =====================================================
+         * NEW IMAGE EVENT
+         *
+         * Backend sends:
+         *
+         * {
+         *   "image": "/generated-images/image_xxx.png"
+         * }
+         *
+         * =====================================================
+         */
+
+        if (payload.image) {
+
+          if (first) {
+
+            assistantEl.innerHTML =
+              "";
+
+            first = false;
+
+          }
+
+
+          const image =
+            document.createElement(
+              "img"
+            );
+
+          image.src =
+            payload.image;
+
+          image.alt =
+            "Generated image";
+
+          image.className =
+            "generated-image";
+
+
+          assistantEl.appendChild(
+            image
+          );
+
+
+          scrollToBottom();
+
+        }
+
+
+        /*
+         * =====================================================
+         * NORMAL TEXT TOKEN
+         * =====================================================
+         */
 
         if (payload.token) {
+
           if (first) {
-            assistantEl.innerHTML = "";
+
+            assistantEl.innerHTML =
+              "";
+
             first = false;
+
           }
-          fullText += payload.token;
-          assistantEl.innerHTML = formatContent(fullText);
+
+
+          fullText +=
+            payload.token;
+
+
+          assistantEl.innerHTML =
+            formatContent(
+              fullText
+            );
+
+
           scrollToBottom();
+
         }
+
 
         if (payload.done) {
+
           break;
+
         }
+
       }
+
     }
 
-    thread.messages.find((m) => m.id === assistantMsgId).content = fullText;
-    thread.updatedAt = Date.now();
+
+    thread.messages.find(
+      (m) =>
+        m.id === assistantMsgId
+    ).content =
+      fullText;
+
+
+    thread.updatedAt =
+      Date.now();
+
+
     renderThreadList();
+
+
   } catch (err) {
-    assistantEl.innerHTML = `<span class="msg-error">Dost AI couldn't respond — (${err.message})</span>`;
-    thread.messages.find((m) => m.id === assistantMsgId).content = assistantEl.textContent;
+
+    assistantEl.innerHTML =
+      `<span class="msg-error">
+        Dost AI couldn't respond — (${err.message})
+      </span>`;
+
+
+    thread.messages.find(
+      (m) =>
+        m.id === assistantMsgId
+    ).content =
+      assistantEl.textContent;
+
+
   } finally {
-    state.isStreaming = false;
+
+    state.isStreaming =
+      false;
+
   }
+
 }
+
 </script>
+
 </body>
 </html>

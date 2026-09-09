@@ -12,6 +12,8 @@ from database import init_db, save_chat_message, get_chat_history, create_or_upd
 from rag.indexing import indexing_pipeline
 from tools import set_current_thread_id
 
+from fastapi.staticfiles import StaticFiles
+
 import os 
 import certifi 
 import json
@@ -26,6 +28,14 @@ os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
 # Define app 
 app = FastAPI()
+
+os.makedirs("generated_images", exist_ok=True)
+
+app.mount(
+    "/generated-images",
+    StaticFiles(directory="generated_images"),
+    name="generated-images"
+)
 
 # Define templates
 templates = Jinja2Templates(directory="templates") 
@@ -219,7 +229,7 @@ async def chat_stream(request: Request):
 
     user_message = data.get("message", "")
     thread_id = data.get("thread_id", "default")
-    selected_model = data.get("model", "gemini-2.5-flash")
+    selected_model = data.get("model", "openai/gpt-oss-120b")
 
     if not user_message.strip():
         return JSONResponse(
@@ -255,6 +265,27 @@ async def chat_stream(request: Request):
                 config=config,
                 stream_mode="messages"
             ):
+                
+                # Check if a tool generated an image
+                if isinstance(chunk, ToolMessage):
+                    tool_content = extract_text_from_chunk(chunk)
+
+                    if tool_content.startswith("IMAGE_GENERATED:"):
+                        image_path = tool_content.replace(
+                            "IMAGE_GENERATED:", "", 1
+                        ).strip()
+
+                        image_filename = os.path.basename(image_path)
+
+                        image_url = f"/generated-images/{image_filename}"
+
+                        yield sse_data({
+                            "image": image_url
+                        })
+
+                        continue
+
+                # Normal AI text streaming
                 if not should_stream_chunk(chunk, metadata):
                     continue
 

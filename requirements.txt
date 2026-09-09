@@ -30,3 +30,5 @@ langchain-huggingface==1.2.2
 youtube-transcript-api==1.2.4
 
 huggingface-hub==1.30.0
+
+Pillow==11.3.0
