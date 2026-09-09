@@ -6,7 +6,8 @@ Dost AI is a ChatGPT-like AI assistant designed to go beyond simple conversation
 
 It can search the web, understand uploaded documents and YouTube videos, remember important information, perform calculations, and generate images - all through an agentic tool-calling workflow.
 
-Link - ```https://dost-ai-vdxi.onrender.com/```, The app is deployed on Render, it can take some time to open the app.
+Link - https://dost-ai-vdxi.onrender.com/ 
+The app is deployed on Render, it can take some time to open the app.
 
 ---
 
