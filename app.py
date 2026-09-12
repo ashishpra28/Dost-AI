@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv 
 
 from agent import get_agent
-from database import init_db, save_chat_message, get_chat_history, create_or_update_conversation, list_conversations
+from database import init_db, save_chat_message, get_chat_history, create_or_update_conversation, list_conversations, delete_conversation
 from rag.indexing import indexing_pipeline
 from tools import set_current_thread_id
 
@@ -73,6 +73,25 @@ async def conversations():
             for item in items
         ]
     }
+
+
+@app.delete("/conversations/{thread_id}")
+async def delete_conversation_route(thread_id: str):
+    try:
+        delete_conversation(thread_id)
+
+        return {
+            "success": True
+        }
+
+    except Exception as e:
+        return JSONResponse(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status_code=500
+        )
 
 
 
