@@ -116,6 +116,7 @@ def delete_conversation(thread_id: str):
     finally:
         db.close()
 
+
         
 def save_chat_message(thread_id: str, role: str, content: str):
     db = SessionLocal()
