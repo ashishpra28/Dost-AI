@@ -131,12 +131,28 @@ textarea {
   padding: 6px 8px 8px;
 }
 
-.thread-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 8px 10px;
+/* Wrapper holding a thread's select-button + delete-button */
+.thread-item-wrap {
+  display: flex;
+  align-items: center;
   border-radius: var(--radius-sm);
+  margin-bottom: 2px;
+  transition: background 0.15s ease;
+}
+
+.thread-item-wrap:hover {
+  background: var(--panel-alt);
+}
+
+.thread-item-wrap.active {
+  background: var(--accent-wash);
+}
+
+.thread-item {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 8px 4px 8px 10px;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -144,18 +160,39 @@ textarea {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
-  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.thread-item:hover {
-  background: var(--panel-alt);
+.thread-item-wrap:hover .thread-item {
   color: var(--text);
 }
 
-.thread-item.active {
-  background: var(--accent-wash);
+.thread-item-wrap.active .thread-item {
   color: var(--accent-strong);
+}
+
+.thread-delete-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.thread-item-wrap:hover .thread-delete-btn {
+  opacity: 1;
+}
+
+.thread-delete-btn:hover {
+  background: var(--panel);
+  color: #e8846b;
 }
 
 /* ---------- Main ---------- */
@@ -822,10 +859,11 @@ textarea {
   --------------------------------------------------------------
   Wired to the actual app.py routes:
 
-  GET  /conversations
-  GET  /history/{thread_id}
-  POST /upload
-  POST /chat/stream
+  GET    /conversations
+  DELETE /conversations/{thread_id}
+  GET    /history/{thread_id}
+  POST   /upload
+  POST   /chat/stream
 
   SSE events:
   { token }
@@ -1328,6 +1366,87 @@ async function selectThread(threadId) {
 }
 
 
+/* ============================================================
+   DELETE THREAD
+   ============================================================ */
+
+async function handleDeleteThread(threadId) {
+
+  const thread =
+    state.threads[threadId];
+
+  const title =
+    thread ? thread.title : "this chat";
+
+  const confirmed =
+    window.confirm(
+      `Delete "${title}"? This cannot be undone.`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    const res =
+      await fetch(
+        `${CONVERSATIONS_ENDPOINT}/${encodeURIComponent(threadId)}`,
+        {
+          method: "DELETE"
+        }
+      );
+
+    if (!res.ok) {
+      throw new Error(
+        `Server returned ${res.status}`
+      );
+    }
+
+  } catch (err) {
+
+    alert(
+      "Could not delete chat: " + err.message
+    );
+
+    return;
+
+  }
+
+  delete state.threads[threadId];
+
+  if (state.threadId === threadId) {
+
+    const remaining =
+      Object.values(state.threads)
+        .sort(
+          (a, b) =>
+            b.updatedAt - a.updatedAt
+        );
+
+    if (remaining.length > 0) {
+
+      await selectThread(remaining[0].id);
+
+    } else {
+
+      createLocalThread();
+
+      renderThreadList();
+
+      renderMessages();
+
+    }
+
+  } else {
+
+    renderThreadList();
+
+  }
+
+}
+
+
 function renderThreadList() {
 
   const items =
@@ -1344,14 +1463,21 @@ function renderThreadList() {
 
   items.forEach((t) => {
 
+    const wrap =
+      document.createElement("div");
+
+    wrap.className =
+      "thread-item-wrap" +
+      (t.id === state.threadId
+        ? " active"
+        : "");
+
+
     const btn =
       document.createElement("button");
 
     btn.className =
-      "thread-item" +
-      (t.id === state.threadId
-        ? " active"
-        : "");
+      "thread-item";
 
     btn.textContent =
       t.title;
@@ -1361,7 +1487,49 @@ function renderThreadList() {
       () => selectThread(t.id)
     );
 
-    els.threadList.appendChild(btn);
+
+    const delBtn =
+      document.createElement("button");
+
+    delBtn.className =
+      "thread-delete-btn";
+
+    delBtn.setAttribute(
+      "aria-label",
+      "Delete chat"
+    );
+
+    delBtn.title =
+      "Delete chat";
+
+    delBtn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <path
+          d="M3 4.5h10M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4.5 4.5l.6 8a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-8"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    `;
+
+    delBtn.addEventListener(
+      "click",
+      (e) => {
+
+        e.stopPropagation();
+
+        handleDeleteThread(t.id);
+
+      }
+    );
+
+
+    wrap.appendChild(btn);
+    wrap.appendChild(delBtn);
+
+    els.threadList.appendChild(wrap);
 
   });
 
@@ -1624,7 +1792,7 @@ function buildGeneratedImageHtml(
         loading="lazy"
       />
 
-      <a
+      
         class="image-download-btn"
         href="${normalizedSrc}"
         download="${fileName}"
