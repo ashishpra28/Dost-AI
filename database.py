@@ -99,7 +99,24 @@ def list_conversations():
     finally:
         db.close()
 
+def delete_conversation(thread_id: str):
+    db = SessionLocal()
 
+    try:
+        db.query(ChatMessage).filter(
+            ChatMessage.thread_id == thread_id
+        ).delete()
+
+        db.query(Conversation).filter(
+            Conversation.thread_id == thread_id
+        ).delete()
+
+        db.commit()
+
+    finally:
+        db.close()
+
+        
 def save_chat_message(thread_id: str, role: str, content: str):
     db = SessionLocal()
 
@@ -160,6 +177,7 @@ def save_memory(thread_id: str, memory: str):
 
     finally:
         db.close()
+
 
 
 def search_memory(thread_id: str, query: str):
